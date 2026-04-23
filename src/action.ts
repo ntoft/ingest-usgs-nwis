@@ -70,6 +70,7 @@ async function fetchNwis(): Promise<NwisTimeSeries[]> {
 
 function buildOps(series: NwisTimeSeries[]): AddOperation[] {
   const seenStations = new Set<string>();
+  const seenObs = new Set<string>();
   const ops: AddOperation[] = [];
 
   for (const ts of series) {
@@ -106,10 +107,13 @@ function buildOps(series: NwisTimeSeries[]): AddOperation[] {
         // USGS sentinel for missing data is -999999
         if (!Number.isFinite(numericValue) || numericValue < -9000) continue;
 
+        const obsName = `Observation/${site}-${r.dateTime}-${mapping.parameter}`;
+        if (seenObs.has(obsName)) continue;
+        seenObs.add(obsName);
         ops.push({
           operation: "add",
           kind: "thing",
-          name: `Observation/${site}-${r.dateTime}-${mapping.parameter}`,
+          name: obsName,
           data: {
             station: `Station/${site}`,
             timestamp: r.dateTime,
